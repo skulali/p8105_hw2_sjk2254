@@ -1,0 +1,16 @@
+---
+title: "p8105_hw2_sjk2254"
+author: "Sharon Kulali"
+date: "2023-10-02"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# loading the needed packages
+
+library(tidyverse)
+```
+
+
