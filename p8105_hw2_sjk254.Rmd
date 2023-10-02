@@ -5,12 +5,86 @@ date: "2023-10-02"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
+```{r setup, message = FALSE}
 # loading the needed packages
 
 library(tidyverse)
+library(readxl)
 ```
+
+
+# Problem 2
+
+## Mr. Trash Wheel Sheet
+
+```{r}
+# importing mr. trash dataset
+
+mt_df = readxl::read_excel("trash_wheel_data.xlsx", sheet = 1, range = "A2:N550") 
+```
+
+```{r}
+# cleaning up the dataset
+
+mt_df =
+  janitor::clean_names(mt_df) |> 
+  drop_na(dumpster)|> 
+  mutate(vessel_name = "mr trash")
+```
+
+```{r}
+# updating the homes_powered variable
+
+mt_df = 
+  mutate(mt_df, homes_powered = (weight_tons*500)/30)
+```
+
+## Professor Trash Wheel Sheet
+
+```{r}
+# importing professor trash dataset
+
+pt_df = readxl::read_excel("trash_wheel_data.xlsx", sheet = 2, range = "A2:M97")
+```
+
+```{r}
+# cleaning up the dataset
+
+pt_df =
+  janitor::clean_names(pt_df)|> 
+  drop_na(dumpster)|> 
+  mutate(vessel_name = "prof trash")
+```
+
+```{r}
+# updating the homes_powered variable
+
+pt_df = mutate(pt_df, homes_powered = (weight_tons*500)/30)
+```
+
+## Gwynnda Trash Wheel Sheet
+
+```{r}
+# importing gwynnda trash dataset
+
+gt_df = readxl::read_excel("trash_wheel_data.xlsx", sheet = 4, range = "A2:K110")
+```
+
+```{r}
+# cleaning up the dataset
+
+gt_df =
+  janitor::clean_names(gt_df)|> 
+  drop_na(dumpster)|> 
+  mutate(vessel_name = "gwyn trash") 
+```
+
+```{r}
+# updating the homes_powered variable
+
+gt_df = mutate(gt_df, homes_powered = (weight_tons*500)/30)
+```
+
+## Combined
 
 
