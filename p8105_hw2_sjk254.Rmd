@@ -102,17 +102,50 @@ Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wh
 
 ## Problem 3
 
-```{r}
-# importing the data sets
+### Baseline Demographics
 
-amyloid_df = read_csv("data/mci_amyloid.csv")
+```{r, message = FALSE}
+# importing the data set
 
-baseline_df = read_csv("data/MCI_baseline.csv", col_names = FALSE)
+baseline_df = read_csv("data/MCI_baseline.csv", skip = 1, col_names = TRUE)
 ```
 
 ```{r}
 # cleaning the data set
 
+baseline_df =
+ janitor::clean_names(baseline_df) |> 
+  drop_na(age_at_onset) |> 
+  mutate(
+    sex = case_match(
+      sex,
+      1 ~ "male",
+      0 ~ "female"
+    ),
+    apoe4 = case_match(
+      apoe4,
+      1 ~ "carrier",
+      0 ~ "non-carrier"
+    )) 
+```
 
+### Summary
+
+The dataset (`baseline_df`) describes basic demographic information of participants in the study. The study aimed to understand the trajectory of Alzheimer's disease (AD) biomarkers by monitoring the development of Mild Cognitive Impairement (MCI). The initital dataset contains information about the variables in the first row thus when importing the data, it had to be indicated that the first row should be skipped. Overall, `r nrow(baseline_df)` participants were recruited and developed MCI. The average baseline age was with percent od women in the study being a apoe4 carrier, the gene associated with a higher risk of developing Alzheimer's disease. 
+
+### Biomarker Values
+
+```{r, message = FALSE}
+# importing the data set
+
+amyloid_df = read_csv("data/mci_amyloid.csv", skip = 1, col_names = TRUE)
+```
+
+```{r}
+# cleaning the data set
+
+amyloid_df =
+  janitor::clean_names(amyloid_df)
+  
 ```
 
