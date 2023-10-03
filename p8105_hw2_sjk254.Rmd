@@ -20,7 +20,7 @@ library(readxl)
 ```{r}
 # importing mr. trash dataset
 
-mt_df = readxl::read_excel("trash_wheel_data.xlsx", sheet = 1, range = "A2:N550") 
+mt_df = readxl::read_excel("trash_wheel_data_updated.xlsx", sheet = 1, range = "A2:N587") 
 ```
 
 ```{r}
@@ -46,7 +46,7 @@ mt_df =
 ```{r}
 # importing professor trash dataset
 
-pt_df = readxl::read_excel("trash_wheel_data.xlsx", sheet = 2, range = "A2:M97")
+pt_df = readxl::read_excel("trash_wheel_data_updated.xlsx", sheet = 2, range = "A2:M109")
 ```
 
 ```{r}
@@ -69,7 +69,7 @@ pt_df = mutate(pt_df, homes_powered = (weight_tons*500)/30)
 ```{r}
 # importing gwynnda trash dataset
 
-gt_df = readxl::read_excel("trash_wheel_data.xlsx", sheet = 4, range = "A2:K110")
+gt_df = readxl::read_excel("trash_wheel_data_updated.xlsx", sheet = 4, range = "A2:L159")
 ```
 
 ```{r}
@@ -97,8 +97,7 @@ trash_df = bind_rows(mt_df, pt_df, gt_df)
 
 ### Summary 
 
-Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wheel (`gt_df`) are water vessels that remove trash from the Jones Falls river in Baltimore, Maryland and dumps them into a dumpster site. The data sets `mt_df`, `pt_df`, and `gt_df` include information about the dumpster number, date of collection, amount of total litter, and the specific litter type. The total weight of trash collected by Professor Trash Wheel was `r sum(pull(pt_df, weight_tons))` tons. The total number of cigarette butts collected by Gwynnda Trash Wheel was `r sum(filter(gt_df, month == "July" & year == 2021)$cigarette_butts)` tons. In the combined data set of all three trash vessels (`trash_df`), there are `r nrow(trash_df)` observations with an average litter weight of `r mean(pull(trash_df, weight_tons))` tons and information collected from `r min(pull(trash_df, year))` to `r max(pull(trash_df, year))`. Notably, the plastic bags variable had `r sum(is.na(pull(trash_df, plastic_bags)))` missing values.
-
+Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wheel (`gt_df`) are water vessels that remove trash from the Jones Falls river in Baltimore, Maryland and dumps them into a dumpster site. The data sets `mt_df`, `pt_df`, and `gt_df` include information about the dumpster number, date of collection, amount of total litter, and the specific litter type. The total weight of trash collected by Professor Trash Wheel was `r pt_df |> pull(weight_tons) |> sum()` tons. The total number of cigarette butts collected by Gwynnda Trash Wheel was `r gt_df |> filter(month == "July" & year == 2021) |> select(cigarette_butts) |> sum()` tons. In the combined data set of all three trash vessels (`trash_df`), there are `r nrow(trash_df)` observations with an average litter weight of `r trash_df |> pull(weight_tons) |> mean() |> round(2)` tons and information collected from `r trash_df |> pull(year) |> min()` to `r trash_df |> pull(year) |> max()`. Notably, the sports balls variable had `r trash_df |> pull(sports_balls) |> is.na() |> sum()` missing values.
 
 ## Problem 3
 
@@ -110,12 +109,11 @@ Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wh
 baseline_df = read_csv("data/MCI_baseline.csv", skip = 1, col_names = TRUE)
 ```
 
-```{r}
+```{r, message = FALSE}
 # cleaning the data set
 
 baseline_df =
  janitor::clean_names(baseline_df) |> 
-  drop_na(age_at_onset) |> 
   mutate(
     sex = case_match(
       sex,
@@ -127,11 +125,17 @@ baseline_df =
       1 ~ "carrier",
       0 ~ "non-carrier"
     )) 
+
+baseline_df_tidy =
+  baseline_df |> 
+  mutate( age_at_onset = as.numeric(age_at_onset)
+  ) |> 
+  drop_na(age_at_onset)
 ```
 
 ### Summary
 
-The dataset (`baseline_df`) describes basic demographic information of participants in the study. The study aimed to understand the trajectory of Alzheimer's disease (AD) biomarkers by monitoring the development of Mild Cognitive Impairement (MCI). The initital dataset contains information about the variables in the first row thus when importing the data, it had to be indicated that the first row should be skipped. Overall, `r nrow(baseline_df)` participants were recruited and developed MCI. The average baseline age was with percent od women in the study being a apoe4 carrier, the gene associated with a higher risk of developing Alzheimer's disease. 
+The dataset (`baseline_df`) describes basic demographic information of participants in the study. The study aimed to understand the trajectory of Alzheimer's disease (AD) biomarkers by monitoring the development of Mild Cognitive Impairement (MCI). The initial dataset contains information about the variables in the first row thus when importing the data, it had to be indicated that the first row should be skipped. Overall, `r nrow(baseline_df)` participants were recruited and `r nrow(baseline_df_tidy)` developed MCI. The average baseline age was `r baseline_df_tidy |> pull(age_at_onset) |> mean() |> round(0)` years old with `r (baseline_df |> filter(sex == "female" & apoe4 == "carrier") |> count()) / (nrow(baseline_df)) * 100` percent of women in the study being a apoe4 carrier, the gene associated with a higher risk of developing Alzheimer's disease. 
 
 ### Biomarker Values
 
@@ -145,7 +149,17 @@ amyloid_df = read_csv("data/mci_amyloid.csv", skip = 1, col_names = TRUE)
 # cleaning the data set
 
 amyloid_df =
-  janitor::clean_names(amyloid_df)
-  
+  janitor::clean_names(amyloid_df)|> 
+  rename(id = study_id)
+```
+
+```{r}
+# joining the data sets
+
+full_df = full_join(baseline_df_tidy, amyloid_df)
+
+a_b_df = inner_join(baseline_df, amyloid_df)
+
+final_df = inner_join(baseline_df_tidy, amyloid_df)
 ```
 
