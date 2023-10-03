@@ -100,5 +100,19 @@ trash_df = bind_rows(mt_df, pt_df, gt_df)
 Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wheel (`gt_df`) are water vessels that remove trash from the Jones Falls river in Baltimore, Maryland and dumps them into a dumpster site. The data sets `mt_df`, `pt_df`, and `gt_df` include information about the dumpster number, date of collection, amount of total litter, and the specific litter type. The total weight of trash collected by Professor Trash Wheel was `r sum(pull(pt_df, weight_tons))` tons. The total number of cigarette butts collected by Gwynnda Trash Wheel was `r sum(filter(gt_df, month == "July" & year == 2021)$cigarette_butts)` tons. In the combined data set of all three trash vessels (`trash_df`), there are `r nrow(trash_df)` observations with an average litter weight of `r mean(pull(trash_df, weight_tons))` tons and information collected from `r min(pull(trash_df, year))` to `r max(pull(trash_df, year))`. Notably, the plastic bags variable had `r sum(is.na(pull(trash_df, plastic_bags)))` missing values.
 
 
+## Problem 3
 
+```{r}
+# importing the data sets
+
+amyloid_df = read_csv("data/mci_amyloid.csv")
+
+baseline_df = read_csv("data/MCI_baseline.csv", col_names = FALSE)
+```
+
+```{r}
+# cleaning the data set
+
+
+```
 
