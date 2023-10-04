@@ -12,6 +12,103 @@ library(tidyverse)
 library(readxl)
 ```
 
+## Problem 1
+
+```{r, message = FALSE}
+# importing the pols data
+
+pols_df = read_csv("data/pols-month.csv")
+```
+
+```{r}
+# creating a new month variable
+
+month_df = 
+  tibble(
+    month_num = 1:12,
+    month_abb = month.abb,
+    month = month.name
+  )
+```
+
+```{r, message = FALSE}
+# cleaning the data
+
+pols_df =
+  pols_df |> 
+  separate("mon", c("year", "month", "day"), sep = "-")|> 
+  mutate(month = as.numeric(month)) |>
+  mutate(year = as.numeric(year)) |> 
+  mutate(
+    month = case_match(
+      month,
+      01 ~ "january",
+      02 ~ "february",
+      03 ~ "march",
+      04 ~ "april",
+      05 ~ "may",
+      06 ~ "june",
+      07 ~ "july",
+      08 ~ "august",
+      09 ~ "september",
+      10 ~ "october",
+      11 ~ "november",
+      12 ~ "december"
+    )) |> 
+  mutate(president = recode(prez_gop, "0" = "dem", "1" = "gop", "2" = "gop")) |>
+  left_join(x = _, y = month_df) |> 
+  select(year, month, everything(), -day, -starts_with("prez"))
+```
+
+```{r}
+# importing the snp data set
+
+snp = read_csv("data/snp.csv", col_types = cols(date = col_date(format = "%m/%d/%y")))
+```
+
+```{r, message = FALSE}
+# cleaning the data
+
+snp =
+  snp |> 
+  separate(date, into = c("year", "month_num", "day"), convert = TRUE) |>
+  mutate(
+    year = if_else(year > 2023, year - 100, year)) |> 
+  left_join(x = _, y = month_df) |> 
+  select(year, month, close)
+```
+
+```{r, message = FALSE}
+# importing the unemployment data set
+
+unemployment = read_csv("data/unemployment.csv")
+```
+
+```{r, message = FALSE}
+# cleaning the data
+
+unemployment = unemployment |> 
+  rename(year = Year) 
+
+unemployment = unemployment |> 
+  pivot_longer(
+    Jan:Dec, 
+    names_to = "month_abb",
+    values_to = "unemployment"
+  ) |> 
+  left_join(x = _, y = month_df) |> 
+  select(year, month, unemployment)
+```
+
+```{r, message = FALSE}
+# joining all the datasets
+
+df_538 = 
+  left_join(pols_df, snp) |>
+  left_join(x = _, y = unemployment)
+```
+
+The FiveThirtyEight data comes from a statistician who wrote a piece about the difficulties in sciences with the first part focusing on p-hacking. The data contained 6 datasets including a dataset about the number of national politicians who are democratic or republican at any given time (`pols_df`), one relating to the Standard & Poor’s stock market index (`snp`), and one about unemployment rates (`unemployment`).The `pols_df` data has `r nrow(pols_df)` observations and `r ncol(pols_df)` variables with information from years `r pols_df |> pull(year) |> min()` to `r pols_df |> pull(year) |> max()`. The `snp` data has `r nrow(snp)` observations and `r ncol(snp)` variables, ranging from years `r snp |> pull(year) |> min()` to `r snp |> pull(year) |> max()`. The `unemployment` data has `r nrow(unemployment)` observations and `r ncol(unemployment)` variables ranging from years `r unemployment |> pull(year) |> min()` to `r unemployment |> pull(year) |> max()`. 
 
 ## Problem 2
 
@@ -92,12 +189,13 @@ gt_df = mutate(gt_df, homes_powered = (weight_tons*500)/30)
 ```{r}
 # creating a new data frame that combines all the data sets
 
-trash_df = bind_rows(mt_df, pt_df, gt_df)
+trash_df = bind_rows(mt_df, pt_df, gt_df) |> 
+  select(vessel_name, everything())
 ```
 
 ### Summary 
 
-Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wheel (`gt_df`) are water vessels that remove trash from the Jones Falls river in Baltimore, Maryland and dumps them into a dumpster site. The data sets `mt_df`, `pt_df`, and `gt_df` include information about the dumpster number, date of collection, amount of total litter, and the specific litter type. The total weight of trash collected by Professor Trash Wheel was `r pt_df |> pull(weight_tons) |> sum()` tons. The total number of cigarette butts collected by Gwynnda Trash Wheel was `r gt_df |> filter(month == "July" & year == 2021) |> select(cigarette_butts) |> sum()` tons. In the combined data set of all three trash vessels (`trash_df`), there are `r nrow(trash_df)` observations with an average litter weight of `r trash_df |> pull(weight_tons) |> mean() |> round(2)` tons and information collected from `r trash_df |> pull(year) |> min()` to `r trash_df |> pull(year) |> max()`. Notably, the sports balls variable had `r trash_df |> pull(sports_balls) |> is.na() |> sum()` missing values.
+Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wheel (`gt_df`) are water vessels that remove trash from the Jones Falls river in Baltimore, Maryland and dumps them into a dumpster site. The data sets `mt_df`, `pt_df`, and `gt_df` include information about the dumpster number, date of collection, amount of total litter, and the specific litter type. The `mt_df` data has `r nrow(mt_df)` observations and `r ncol(mt_df)` variables with information ranging from years `r mt_df |> pull(year) |> min()` to `r mt_df |> pull(year) |> max()`. The `pt_df` data has `r nrow(pt_df)` observations and `r ncol(pt_df)` variables with information ranging from years `r pt_df |> pull(year) |> min()` to `r pt_df |> pull(year) |> max()`. The `gt_df` data has `r nrow(gt_df)` observations and `r ncol(gt_df)` variables with information ranging from years `r gt_df |> pull(year) |> min()` to `r gt_df |> pull(year) |> max()`. The total weight of trash collected by Professor Trash Wheel was `r pt_df |> pull(weight_tons) |> sum()` tons. The total number of cigarette butts collected by Gwynnda Trash Wheel was `r gt_df |> filter(month == "July" & year == 2021) |> select(cigarette_butts) |> sum()` tons. In the combined data set of all three trash vessels (`trash_df`), there are `r nrow(trash_df)` observations and `r ncol(trash_df)` variables with an average litter weight of `r trash_df |> pull(weight_tons) |> mean() |> round(2)` tons and information collected from years `r trash_df |> pull(year) |> min()` to `r trash_df |> pull(year) |> max()`. Notably, the sports balls variable had `r trash_df |> pull(sports_balls) |> is.na() |> sum()` missing values.
 
 ## Problem 3
 
@@ -155,6 +253,7 @@ amyloid_df =
 
 ```{r}
 # joining the data sets
+
 
 full_df = full_join(baseline_df_tidy, amyloid_df)
 
