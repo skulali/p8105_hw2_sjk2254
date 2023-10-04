@@ -204,7 +204,7 @@ Mr. Trash Wheel (`mt_df`), Professor Trash Wheel (`pt_df`), and Gwynnda Trash Wh
 ```{r, message = FALSE}
 # importing the data set
 
-baseline_df = read_csv("data/MCI_baseline.csv", skip = 1, col_names = TRUE)
+baseline_df = read_csv("data/MCI_baseline.csv", skip = 1, col_names = TRUE, na = c(".","NA"))
 ```
 
 ```{r, message = FALSE}
@@ -222,18 +222,10 @@ baseline_df =
       apoe4,
       1 ~ "carrier",
       0 ~ "non-carrier"
-    )) 
-
-baseline_df_tidy =
-  baseline_df |> 
-  mutate( age_at_onset = as.numeric(age_at_onset)
-  ) |> 
-  drop_na(age_at_onset)
+    )) |> 
+      filter(current_age < age_at_onset | is.na(age_at_onset))
+  
 ```
-
-### Summary
-
-The dataset (`baseline_df`) describes basic demographic information of participants in the study. The study aimed to understand the trajectory of Alzheimer's disease (AD) biomarkers by monitoring the development of Mild Cognitive Impairement (MCI). The initial dataset contains information about the variables in the first row thus when importing the data, it had to be indicated that the first row should be skipped. Overall, `r nrow(baseline_df)` participants were recruited and `r nrow(baseline_df_tidy)` developed MCI. The average baseline age was `r baseline_df_tidy |> pull(age_at_onset) |> mean() |> round(0)` years old with `r (baseline_df |> filter(sex == "female" & apoe4 == "carrier") |> count()) / (nrow(baseline_df)) * 100` percent of women in the study being a apoe4 carrier, the gene associated with a higher risk of developing Alzheimer's disease. 
 
 ### Biomarker Values
 
@@ -248,17 +240,34 @@ amyloid_df = read_csv("data/mci_amyloid.csv", skip = 1, col_names = TRUE)
 
 amyloid_df =
   janitor::clean_names(amyloid_df)|> 
-  rename(id = study_id)
+  rename(id = study_id) |> 
+  pivot_longer(
+    baseline:time_8,
+    names_to = "time_elapse_years",
+    values_to = "amyloid_ratio"
+  )
 ```
+
+```{r, eval = FALSE}
+library(arsenal)
+
+summary(comparedf(amyloid_df, baseline_df, by = "id"))
+```
+
 
 ```{r}
 # joining the data sets
 
+final_df = inner_join(baseline_df, amyloid_df)
+```
 
-full_df = full_join(baseline_df_tidy, amyloid_df)
+### Summary
 
-a_b_df = inner_join(baseline_df, amyloid_df)
+The dataset (`baseline_df`) describes basic demographic information of participants in the study. The study aimed to understand the trajectory of Alzheimer's disease (AD) biomarkers by monitoring the development of Mild Cognitive Impairement (MCI). The dataste (`amyloid_df`) describes the changes over time in amyloid beta 42/40, which has been known to predict Alzheimer's disease. The initial datasets contains information about the variables in the first row thus when importing the data, it had to be indicated that the first row should be skipped and that the periods in the dataset should be considered NA's. Additionally, when tidying the `amyloid_df`, the number of rows increased because the time elapse information was moved to a column. There's about 8 individuals in the `baseline_df` who are not in the `amyloid_df`. Also, there are 16 individuals in the `amyloid_df`who were not in the `baseline_df`. Overall, `r nrow(baseline_df)` participants were recruited after exclusions criteria (no MCI at baseline). The average baseline age was `r baseline_df |> pull(age_at_onset) |> mean() |> round(0)` years old with `r (baseline_df |> filter(sex == "female" & apoe4 == "carrier") |> count()) / (nrow(baseline_df)) * 100|> round(2)` percent of women in the study being a apoe4 carrier, the gene associated with a higher risk of developing Alzheimer's disease. When both data sets were combined (`final_df`), there were `r nrow(final_df)` observations and `r ncol(final_df)` variables.
 
-final_df = inner_join(baseline_df_tidy, amyloid_df)
+```{r}
+# exporting the results
+
+write.csv(final_df, "data\\final_df.csv", row.names=TRUE)
 ```
 
